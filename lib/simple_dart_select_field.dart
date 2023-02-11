@@ -2,15 +2,18 @@ import 'dart:html';
 
 import 'package:simple_dart_ui_core/simple_dart_ui_core.dart';
 
-class SelectField extends Component
-    with ValueChangeEventSource<List<String>>, MixinDisable
-    implements StateComponent<List<String>> {
+typedef ObjectStringAdapter<T> = String Function(T object);
+
+class SelectField<T> extends Component
+    with ValueChangeEventSource<List<T>>, MixinDisable
+    implements StateComponent<List<T>> {
   SelectElement selectElement = SelectElement();
+  ObjectStringAdapter<T> adapter = (object) => object.toString();
 
   @override
   Element get element => selectElement;
 
-  List<String> optionList = <String>[];
+  List<T> optionList = <T>[];
 
   SelectField() : super('SelectField') {
     element.onChange.listen((event) {
@@ -18,10 +21,10 @@ class SelectField extends Component
     });
   }
 
-  List<String> get value {
+  List<T> get value {
     assert(selectElement.options.length == optionList.length,
         'selectElementOptions is not actual(${selectElement.options.length} != ${optionList.length})');
-    final ret = <String>[];
+    final ret = <T>[];
     for (var i = 0; i < optionList.length; i++) {
       if (selectElement.options[i].selected) {
         ret.add(optionList[i]);
@@ -30,7 +33,7 @@ class SelectField extends Component
     return ret;
   }
 
-  set value(List<String> newValue) {
+  set value(List<T> newValue) {
     final oldValue = value;
     for (var i = 0; i < optionList.length; i++) {
       final optionVal = newValue.contains(optionList[i]);
@@ -43,19 +46,22 @@ class SelectField extends Component
   String get state => value.join(',');
 
   @override
-  set state(String newValue) => value = newValue.split(',');
+  set state(String newValue) {
+    final valueStringSet = newValue.split(',').toSet();
+    value = optionList.where((element) => valueStringSet.contains(adapter(element))).toList();
+  }
 
   void focus() {
     selectElement.focus();
   }
 
-  void initOptions(List<String> options) {
+  void initOptions(List<T> options) {
     optionList = options;
     for (final option in selectElement.options) {
       option.remove();
     }
     for (final option in options) {
-      final optionElement = OptionElement()..text = option;
+      final optionElement = OptionElement()..text = this.adapter(option);
       selectElement.append(optionElement);
     }
   }
