@@ -2,8 +2,6 @@ import 'dart:html';
 
 import 'package:simple_dart_ui_core/simple_dart_ui_core.dart';
 
-typedef ObjectStringAdapter<T> = String Function(T object);
-
 class SelectField<T> extends Component
     with ValueChangeEventSource<List<T>>, MixinDisable
     implements StateComponent<List<T>> {
@@ -51,18 +49,39 @@ class SelectField<T> extends Component
     value = optionList.where((element) => valueStringSet.contains(adapter(element))).toList();
   }
 
+  void clear() {
+    for (final option in selectElement.options) {
+      option.remove();
+    }
+    optionList = <T>[];
+  }
+
   void focus() {
     selectElement.focus();
   }
 
   void initOptions(List<T> options) {
+    clear();
     optionList = options;
-    for (final option in selectElement.options) {
-      option.remove();
-    }
     for (final option in options) {
       final optionElement = OptionElement()..text = this.adapter(option);
       selectElement.append(optionElement);
+    }
+  }
+
+  void initOptionsWithGroups(Map<String, List<T>> groups) {
+    clear();
+    for (final group in groups.entries) {
+      final optGroup = OptGroupElement()..label = group.key;
+      for (final option in group.value) {
+        final strValue = this.adapter(option);
+        final optionElement = OptionElement()
+          ..text = strValue
+          ..value = strValue;
+        optGroup.append(optionElement);
+        optionList.add(option);
+      }
+      selectElement.append(optGroup);
     }
   }
 
